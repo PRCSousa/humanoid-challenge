@@ -4,6 +4,7 @@ import numpy as np
 import time
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+import pandas as pd
 
 # setup model
 import urllib.request
@@ -35,8 +36,8 @@ options = vision.HandLandmarkerOptions(
 )
 detector = vision.HandLandmarker.create_from_options(options)
 
-vid_path = 'data/raw/testvideo.mp4'
-out_path = 'outputs/testvideo_debug.mp4'
+vid_path = 'data/raw/clip_1.mp4'
+out_path = 'outputs/clip_1_debug.mp4'
 os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
 vid = cv2.VideoCapture(vid_path)
@@ -51,6 +52,8 @@ writer = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
 
 frame_idx = 0
 n_detected = 0
+
+landmark_data = pd.DataFrame(columns=['frame_idx', 'landmark_data', 'thumb_index_distance', 'landmark_zero_pos'])
 
 while vid.isOpened():
     ret, frame = vid.read()
@@ -105,9 +108,24 @@ while vid.isOpened():
             
             cv2.putText(frame, f"thumb_index_distance = {thumb_index_dist:.3f}", (10, 60),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            
+            row = pd.DataFrame({
+                'frame_idx': [frame_idx],
+                'landmark_data': [[(lm.x, lm.y, lm.z) for lm in hand_lms]],
+                'thumb_index_distance': [thumb_index_dist],
+                'landmark_zero_pos': [(hand_lms[0].x, hand_lms[0].y, hand_lms[0].z)]
+            })
+            landmark_data = pd.concat([landmark_data, row], ignore_index=True)
     else:
         cv2.putText(frame, "no hand detected", (10, 60),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+        row = pd.DataFrame({
+            'frame_idx': [frame_idx],
+            'landmark_data': [None],
+            'thumb_index_distance': [None],
+            'landmark_zero_pos': [None]
+        })
+        landmark_data = pd.concat([landmark_data, row], ignore_index=True)
 
     cv2.putText(frame, f"frame {frame_idx}/{frame_count}", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
@@ -123,3 +141,4 @@ writer.release()
 detector.close()
 
 print(f"\nResult in: {out_path}")
+landmark_data.to_csv('data/poses/debug_landmark_data.csv', index=False)
