@@ -38,6 +38,9 @@ cd "$LEROBOT_DIR"
 pip install -e ".[smolvla]"
 pip install -e ".[libero]"
 
+export MUJOCO_GL=osmesa
+export PYOPENGL_PLATFORM=osmesa
+
 pip install mediapipe
 pip install opencv-python
 
