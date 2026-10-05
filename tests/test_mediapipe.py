@@ -37,7 +37,7 @@ options = vision.HandLandmarkerOptions(
 detector = vision.HandLandmarker.create_from_options(options)
 
 vid_path = 'data/raw/clap_1.mp4'
-out_path = 'outputs/clap_1_debug.mp4'
+out_path = 'outputs/clap_1.mp4'
 os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
 vid = cv2.VideoCapture(vid_path)
