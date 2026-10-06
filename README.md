@@ -30,7 +30,7 @@ Some instructions include:
 Observe some clapping:
 
 <p align="center">
-<img src="imgs/clapping_hands.gif" style='width: 586px%'/>
+<img src="imgs/clapping_hands.gif" style='width: 586px'/>
 </p>
 
 In total, I got approximatedly 10 videos for each instruction, to a total of 89 clips of 5-15 seconds.
