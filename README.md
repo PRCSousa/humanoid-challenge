@@ -19,18 +19,21 @@ The idea behind what I will be doing is simple:
 
 ## Data Collection
 
-This was the most straight-forward part of the project (at least the collection itself, we'll get to that). After some iterations of what I wanted to train on, I collected approximatedly 30 videos of me doing 7 different actions, slightly changing initial conditions to add some variety, you can see the data in [HuggingFace](https://huggingface.co/datasets/ReAscalon/humanoid_move_thing).
+This was the most straight-forward part of the project (at least the collection itself, we'll get to that). After some iterations of what I wanted to train on, I collected approximatedly 30 videos of me doing 9 different actions, slightly changing initial conditions to add some variety, you can see the data in [HuggingFace](https://huggingface.co/datasets/ReAscalon/humanoid_move_thing).
 
 Some instructions include:
-- Clapping the gripper;
+- Opening and closing the gripper;
 - Rotating clockwise and counterclockwise;
 - Moving in all directions;
+- Holding stil;
 
 Observe some clapping:
 
 <p align="center">
 <img src="imgs/clapping_hands.gif" style='width: 70%'/>
 </p>
+
+In total, I got approximatedly 10 videos for each instruction, to a total of 89 clips of 5-15 seconds.
 
 ## Hand Tracking
 
@@ -74,9 +77,7 @@ So I had to search for something a bit more intricate, and that's when I read ab
 <img src="imgs/PnP.png"style='width: 70%'/>
 </p>
 
-But, if we look at what we need to solve this problem, we actually (kinda) have everything we need to solve for it. Our hands, in terms of scale, do not really change all that much, and the palm specifically can't bend like our fingers, the palm is a rigid body, and we can estimate roughly their 3D positions (if we assume the palm landmarks are all coplanar to each other).
-
-So, instead of calculating the relative position of the camera to our palm, we instead calculate the relative position of the palm to our camera! 
+But, if we look at what we need to solve this problem, we actually (kinda) have everything we need to solve for it. Our hands, in terms of scale, do not really change all that much, and the palm specifically can't bend like our fingers, the palm is a rigid body, and we can estimate roughly their 3D positions (if we assume the palm landmarks are all coplanar to each other). So, instead of calculating the relative position of the camera to our palm, we instead calculate the relative position of the palm to our camera! 
 
 This did work, not perfectly, but planar Y Z movement became much less ambiguous when compared to the previous iterations of depth estimation.
 
@@ -97,7 +98,41 @@ Finally, now we just had to convert this data into LIBERO's convention, which wa
 <img src="imgs/sim2real.gif"style='width: 100%'/>
 </p>
 
+With this, we have hand movement being decently translated into the simulation environment. Running this over my whole set of videos, and associating each one to their specific instruction, we end up with our dataset to train the VLA on.
+
+## Training
+
+In terms of training, given our constraints in terms of data, and the fact that I have less than a week to train, and that my PC has only 6GB of VRAM, I couldn't neither train a whole new VLA model, nor run a full fine-tune on SmolVLA. With this in mind, I set my goal on at least optimizing SmolVLA through LoRA. This would take a small toll of roughly 2GB of VRAM on my computer and run relatively fast approximatedly 6 hours per 30000 steps. Given my time and compute constraints, I'll expect a trade-off in terms of results to at least get some results.
+
 ## Results
+
+(Ran 3 per instruction ove 100 steps averaged each column explain later)
+
+### BASELINE
+| instruction      | Δx   | Δy   | Δz   | abs. path | rY     | gR     | sY | sZ | sG |
+| ---------------- | ------- | ------- | ------- | ------ | ------ | ------ | -- | -- | -- |
+| move left        | +0.1304 | +0.0537 | -0.0177 | 0.3556 | 0.0703 | 0.0642 | 7  | 10 | 7  |
+| move right       | +0.2407 | -0.0998 | +0.0904 | 0.4022 | 0.1228 | 0.0387 | 4  | 7  | 6  |
+| move forward     | +0.2303 | +0.0025 | +0.1214 | 0.3913 | 0.0760 | 0.0384 | 5  | 5  | 7  |
+| move backward    | +0.1371 | +0.0705 | +0.1242 | 0.3493 | 0.0840 | 0.0544 | 5  | 5  | 7  |
+| clockwise        | +0.0786 | +0.0914 | -0.0377 | 0.3905 | 0.0942 | 0.0768 | 2  | 6  | 8  |
+| counterclockwise | +0.0963 | +0.0834 | -0.1128 | 0.3685 | 0.0913 | 0.0762 | 2  | 6  | 7  |
+| wave             | +0.2707 | -0.0514 | +0.1194 | 0.4440 | 0.0771 | 0.0376 | 4  | 9  | 3  |
+| clap             | -0.0365 | -0.1704 | -0.0548 | 0.3562 | 0.1949 | 0.0376 | 1  | 6  | 1  |
+| hold still       | +0.2086 | +0.0191 | -0.0302 | 0.4085 | 0.0972 | 0.0697 | 5  | 10 | 9  |
+
+### FINE-TUNED
+| instruction      | Δx   | Δy   | Δz   | abs. path | rY     | gR     | sY | sZ | sG |
+| ---------------- | ------- | ------- | ------- | ------ | ------ | ------ | -- | -- | -- |
+| move forward     | -0.1765 | -0.0554 | +0.0244 | 0.4441 | 0.0830 | 0.0756 | 7  | 2  | 9  |
+| move backward    | +0.1109 | -0.1642 | -0.0133 | 0.3777 | 0.1744 | 0.0787 | 3  | 1  | 4  |
+| clockwise        | -0.2693 | -0.3020 | +0.0179 | 0.5874 | 0.3082 | 0.0785 | 11 | 1  | 8  |
+| counterclockwise | -0.3129 | -0.3182 | +0.0220 | 0.5728 | 0.3187 | 0.0780 | 4  | 0  | 10 |
+| wave             | +0.0148 | +0.4424 | +0.0079 | 0.6267 | 0.4430 | 0.0788 | 1  | 2  | 6  |
+| clap             | -0.0430 | +0.0427 | +0.0085 | 0.1472 | 0.0441 | 0.0634 | 0  | 0  | 11 |
+| hold still       | -0.1593 | -0.0452 | +0.0232 | 0.2380 | 0.0517 | 0.0784 | 2  | 0  | 11 |
+| move left        | -0.0697 | +0.5332 | +0.0009 | 0.5727 | 0.5335 | 0.0781 | 0  | 0  | 11 |
+| move right       | -0.1880 | -0.4421 | +0.0129 | 0.5412 | 0.4426 | 0.0785 | 0  | 0  | 7  |
 
 ## Reproducibility
 
