@@ -57,7 +57,7 @@ And after a bit of trial and error, I got this going:
 
 Fantastic. Note the line connecting the thumb and index, this will be the main way of indicating if I am gripping something or not, and here is where the biggest challenge began.
 
-#### Going forwards, and going upwards
+### Going forwards, and going upwards
 
 Going from 2D video to 3D motion is quite hard, in the end we are operating with one dimension less than we need. Pixels move in two axes on a 2D video, and this does not provide us with any sense of depth, so moving my hand forwards produces the same change as rising it, a positive change in the Y axis, making 3D movement ambiguous in that scenario.
 
@@ -71,15 +71,26 @@ By making some assumptions in my hand size, I could use the distance between lan
 <img src="imgs/perspective.png" style='width: 70%'/>
 </p>
 
-So I had to search for something a bit more intricate, and that's when I read about Perspective-n-Point (PnP). Normally, PnP is used to estimate a camera's position using a set of known 3D points, and their corresponding 2D projections, and this is really how AprilTags work in the end, we know the physical size of the tag and where their corners sit, and we have their 2D video projections, so we can estimate the camera position.
+## The stroke of genius
+
+So I had to search for something a bit more intricate, and that's when I read about Perspective-n-Point (PnP).
+
+Normally, PnP is used to estimate a camera's position using a set of known 3D points, and their corresponding 2D projections, and this is really how AprilTags work in the end, we know the physical size of the tag and where their corners sit, and we have their 2D video projections, so we can estimate the camera position.
 
 <p align="center">
 <img src="imgs/PnP.png"style='width: 70%'/>
 </p>
 
-But, if we look at what we need to solve this problem, we actually (kinda) have everything we need to solve for it. Our hands, in terms of scale, do not really change all that much, and the palm specifically can't bend like our fingers, the palm is a rigid body, and we can estimate roughly their 3D positions (if we assume the palm landmarks are all coplanar to each other). So, instead of calculating the relative position of the camera to our palm, we instead calculate the relative position of the palm to our camera! 
+But, if we look at what we need to solve this problem, we actually (kinda) have everything we need to solve for it. Our hands, in terms of scale, do not really change all that much, and the palm specifically can't bend like our fingers, the palm is a rigid body, and we can estimate roughly their 3D positions (if we assume the palm landmarks are all coplanar to each other).
 
-This did work, not perfectly, but planar Y Z movement became much less ambiguous when compared to the previous iterations of depth estimation.
+So, instead of calculating the relative position of the camera to our palm, we instead calculate the relative position of the palm to our camera!
+
+
+<p align="center">
+<img src="imgs/3dpalmplane.gif"style='width: 586px'/>
+</p>
+
+This did work! And honestly in a much better way than I was expecting. As seen in the gif the axes are a bit crooked, in the end I assume the palm to be a plane, and this would be a limitation as any task requiring twisting my hand would throw this off, but for a hand serving as a proxy of a robotic arm, this will suffice.
 
 
 ### Preparing our data
