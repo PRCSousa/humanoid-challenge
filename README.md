@@ -30,7 +30,7 @@ Some instructions include:
 Observe some clapping:
 
 <p align="center">
-<img src="imgs/clapping_hands.gif" style='width: 1500%'/>
+<img src="imgs/clapping_hands.gif" style='width: 586px%'/>
 </p>
 
 In total, I got approximatedly 10 videos for each instruction, to a total of 89 clips of 5-15 seconds.
@@ -52,7 +52,7 @@ With these videos in hand (ha!), now I'd have to convert whatever my hand was do
 And after a bit of trial and error, I got this going:
 
 <p align="center">
-<img src="imgs/tracked_clapping.gif"style='width: 1500%'/>
+<img src="imgs/tracked_clapping.gif"style='width: 586px'/>
 </p>
 
 Fantastic. Note the line connecting the thumb and index, this will be the main way of indicating if I am gripping something or not, and here is where the biggest challenge began.
