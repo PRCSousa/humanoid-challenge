@@ -21,28 +21,6 @@ DEFAULT_IMAGE_SIZE = 256
 VIDEO_TARGET_H = 360
 DEFAULT_TASK_STRING = "pick up the alphabet soup and place it in the basket"
 
-# [dx, dy, dz, drx, dry, drz, gripper]
-ACTION_MASKS = {
-    "move left":        [0, 1, 0, 0, 0, 0, 0],
-    "move right":       [0, 1, 0, 0, 0, 0, 0],
-    "move forward":     [1, 0, 0, 0, 0, 0, 0],
-    "move backward":    [1, 0, 0, 0, 0, 0, 0],
-    "move up":          [0, 0, 1, 0, 0, 0, 0],
-    "move down":        [0, 0, 1, 0, 0, 0, 0],
-    "clockwise":        [1, 1, 0, 0, 0, 0, 0],
-    "counterclockwise": [1, 1, 0, 0, 0, 0, 0],
-    "wave":             [1, 1, 0, 0, 0, 0, 0],
-    "clap":             [0, 0, 0, 0, 0, 0, 1],
-    "hold still":       [0, 0, 0, 0, 0, 0, 0],
-}
-
-
-def apply_mask(action, instruction):
-    mask = ACTION_MASKS.get(instruction)
-    if not mask:
-        return action
-    return action * np.array(mask, dtype=np.float32)
-
 
 def stem_to_instruction(stem):
     base = re.sub(r"_poses$", "", stem)
@@ -123,7 +101,7 @@ def find_source_video(stem, raw_dir):
         p = raw_dir / f"{stem}{ext}"
         if p.exists():
             return p
-    return None
+        return None
 
 
 def write_libero_video(agentview_list, wrist_list, out_path, fps=LIBERO_FPS):
@@ -220,8 +198,6 @@ def replay_episode(pose_data, task_bddl, init_state, config, camera_size, task_l
         if interp:
             n_interp += 1
 
-    # Apply per-instruction mask
-    raw_actions = [apply_mask(a, task_language) for a in raw_actions]
     n_grip_closed = sum(1 for a in raw_actions if a[6] > 0)
 
     env = OffScreenRenderEnv(

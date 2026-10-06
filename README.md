@@ -103,7 +103,7 @@ Another important change was calculating the hand position in relation to the ca
 
 In terms of the gripper, initially I looked rougly at what would be decent values to delineate if my thumb-index distance meant opened or closed, but this was very unstable, so I opted to calculate a kmeans per video to find a decent threshold between setting the gripper as opened or closed. In hindsight, I assumed the gripper to be binary, which led me to try and find the threshold in the continuous data, when I could've just map the max and min of each clip to [-1, 1] respectively.
 
-Finally, now we just had to convert this data into LIBERO's convention, which was very straightforward, as it uses the same convention, and just required some scaling.
+Finally, now we just had to convert this data into LIBERO's convention, which was very straightforward and just required some scaling.
 
 <p align="center">
 <img src="imgs/sim2real.gif"style='width: 100%'/>
