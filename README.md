@@ -1,12 +1,12 @@
 # Training a VLA model to move a robotic arm with my own hands (literally)
 
-In this project, I fine-tuned a VLA model using my own collection of videos and instructions (like "move left" or "rotate clockwise") with the objective of manipulating a robotic arm on customs instructions that I created, with my hand as a the teacher.
+In this project, I fine-tuned a VLA model using my own collection of videos and instructions (like "move left" or "rotate clockwise") with the objective of manipulating a robotic arm on custom instructions that I created, with my hand as a the teacher.
 
 ## How it began
 
 My background as a researcher is in reinforcement learning, and naturally, I've always kept up with the current advancements in the domain, being the most interesting one to me VLAs. I feel like this technology, besides the wonders of an LLM, is the first actual 'sci-fi'-esque technology that will allow a computer to come to life and produce general-purpose machines.
 
-Thing is, I've never built one, between finishing my Master's and working as a researcher, [Humanoid's](https://thehumanoid.ai/) provided me with the perfect environment to experiment and learn a bit more about this. Their challenge was to drive a robotic arm in a simulation env, and he main constraint was for us to use data that was collected by ourselves to do so. Time to get to work.
+Thing is, I've never built one, between finishing my Master's and working as a researcher, [Humanoid's](https://thehumanoid.ai/) provided me with the perfect environment to experiment and learn a bit more about this. Their challenge was to drive a robotic arm in a simulation env, and the main constraint was for us to use data that was collected by ourselves to do so. Time to get to work.
 
 ### The Plan
 
@@ -19,13 +19,13 @@ The idea behind what I will be doing is simple:
 
 ## Data Collection
 
-This was the most straight-forward part of the project (at least the collection itself, we'll get to that). After some iterations of what I wanted to train on, I collected approximatedly 30 videos of me doing 9 different actions, slightly changing initial conditions to add some variety, you can see the data in [HuggingFace](https://huggingface.co/datasets/ReAscalon/humanoid_move_thing).
+This was the most straight-forward part of the project (at least the collection itself, we'll get to that). After some iterations of what I wanted to train on, I collected approximately 30 videos of me doing 9 different actions, slightly changing initial conditions to add some variety, you can see the data in [HuggingFace](https://huggingface.co/datasets/ReAscalon/humanoid_move_thing).
 
 Some instructions include:
 - Opening and closing the gripper;
 - Rotating clockwise and counterclockwise;
 - Moving in all directions;
-- Holding stil;
+- Holding still;
 
 Observe some clapping:
 
@@ -33,7 +33,7 @@ Observe some clapping:
 <img src="imgs/clapping_hands.gif" style='width: 586px'/>
 </p>
 
-In total, I got approximatedly 10 videos for each instruction, to a total of 89 clips of 5-15 seconds.
+In total, I got approximately 10 videos for each instruction, to a total of 89 clips of 5-15 seconds.
 
 ## Hand Tracking
 
@@ -97,7 +97,7 @@ This did work! And honestly in a much better way than I was expecting. As seen i
 
 Now that we can convert 2D video to hand positions, we will make use of the change in position of my hand to produce data, so my hand movement will be expressed as [dx, dy, dz, drx, dry, drz, gripper].
 
-As I am human and as calculations go, the data had a lot of jitter, and when I looked at the initial retargetings inside the simulator, the robotic arm shaked a lot, and this would introduce a lot of problems in terms of precision if I were to train the VLA on larger tasks where precision was key. So, across all the data, I computed an EMA to smooth everything out.
+Due to the naturally jitter of human motion, and when I looked at the initial retargetings inside the simulator, the robotic arm shaked a lot, and this would introduce a lot of problems in terms of precision if I were to train the VLA on larger tasks where precision was key. So, across all the data, I computed an EMA to smooth everything out.
 
 Another important change was calculating the hand position in relation to the camera angle, so by using an approximation of how tilted the camera was, we could calculate the rotation matrix to align our data coordinates to the coordinates of the simulator (aligned in relation to the table).
 
@@ -113,7 +113,7 @@ With this, we have hand movement being decently translated into the simulation e
 
 ## Training
 
-In terms of training, given our constraints in terms of data, and the fact that I have less than a week to train, and that my PC has only 6GB of VRAM, I couldn't neither train a whole new VLA model, nor run a full fine-tune on SmolVLA. With this in mind, I set my goal on at least optimizing SmolVLA through LoRA. This would take a small toll of roughly 2GB of VRAM on my computer and run relatively fast, approximatedly 6 hours per 30000 steps. Given my time and compute constraints, I'll expect a trade-off in performance to at least get some results.
+In terms of training, given our constraints in terms of data, and the fact that I have less than a week to train, and that my PC has only 6GB of VRAM, I could neither train a whole new VLA model, nor run a full fine-tune on SmolVLA. With this in mind, I set my goal on at least optimizing SmolVLA through LoRA. This would take a small toll of roughly 2GB of VRAM on my computer and run relatively fast, approximately 6 hours per 30000 steps. Given my time and compute constraints, I'll expect a trade-off in performance to at least get some results.
 
 ## Results
 
@@ -127,17 +127,17 @@ In order to confirm if the fine-tuned model learnt the instructions that were pr
 
 
 ### BASELINE
-| instruction      | Δx   | Δy   | Δz   | abs. path | rY     | rG     | sY | sZ | sG |
-| ---------------- | ------- | ------- | ------- | ------ | ------ | ------ | -- | -- | -- |
-| move left        | +0.1304 | +0.0537 | -0.0177 | 0.3556 | 0.0703 | 0.0642 | 7  | 10 | 7  |
-| move right       | +0.2407 | -0.0998 | +0.0904 | 0.4022 | 0.1228 | 0.0387 | 4  | 7  | 6  |
-| move forward     | +0.2303 | +0.0025 | +0.1214 | 0.3913 | 0.0760 | 0.0384 | 5  | 5  | 7  |
-| move backward    | +0.1371 | +0.0705 | +0.1242 | 0.3493 | 0.0840 | 0.0544 | 5  | 5  | 7  |
-| clockwise        | +0.0786 | +0.0914 | -0.0377 | 0.3905 | 0.0942 | 0.0768 | 2  | 6  | 8  |
-| counterclockwise | +0.0963 | +0.0834 | -0.1128 | 0.3685 | 0.0913 | 0.0762 | 2  | 6  | 7  |
-| wave             | +0.2707 | -0.0514 | +0.1194 | 0.4440 | 0.0771 | 0.0376 | 4  | 9  | 3  |
-| clap             | -0.0365 | -0.1704 | -0.0548 | 0.3562 | 0.1949 | 0.0376 | 1  | 6  | 1  |
-| hold still       | +0.2086 | +0.0191 | -0.0302 | 0.4085 | 0.0972 | 0.0697 | 5  | 10 | 9  |
+| instruction      | Δx          | Δy          | Δz          | abs. path   | rY       | rG       | sX | sY | sZ | sG |
+| ---------------- | ----------- | ----------- | ----------- | ----------- | -------- | -------- | -- | -- | -- | -- |
+| move left        | +0.1127     | **+0.0792** | +0.0062     | 0.3633      | 0.0964   | 0.0765   | 3  | 4  | 5  | 5  |
+| move right       | +0.2461     | **-0.0872** | +0.0884     | 0.4016      | 0.1088   | 0.0405   | 0  | 6  | 11 | 6  |
+| move forward     | **+0.2108** | -0.0003     | +0.1285     | 0.3907      | 0.0620   | 0.0419   | 0  | 4  | 5  | 6  |
+| move backward    | **+0.0905** | +0.1142     | +0.0522     | 0.3276      | 0.1240   | 0.0548   | 1  | 1  | 10 | 10 |
+| clockwise        | +0.0948     | +0.0919     | -0.0259     | 0.3770      | 0.0978   | 0.0763   | **1** | **2** | 4  | 6  |
+| counterclockwise | +0.0828     | +0.1036     | -0.1094     | 0.3507      | 0.1111   | 0.0756   | **1** | **1** | 7  | 9  |
+| wave             | +0.2586     | -0.1099     | +0.1270     | 0.4459      | 0.1218   | 0.0374   | 0  | **4** | 6  | 3  |
+| clap             | -0.0172     | -0.1690     | -0.0211     | 0.3199      | 0.1713   | 0.0389   | 4  | 3  | 6  | **3** |
+| hold still       | +0.2251     | -0.0367     | +0.0590     | **0.3921**  | 0.0816   | 0.0558   | 1  | 3  | 9  | 8  |
 
 ### FINE-TUNED
 | instruction      | Δx   | Δy   | Δz   | abs. path | rY     | rG     | sY | sZ | sG |
@@ -153,13 +153,69 @@ In order to confirm if the fine-tuned model learnt the instructions that were pr
 | hold still       | -0.1593 | -0.0452 | +0.0232 | 0.2380 | 0.0517 | 0.0784 | 2  | 0  | 11 |
 
 
+
 ## Reproducibility
+
+This project was developed on WSL running Ubuntu 22.04. All the necessary commands to make and install the environment should be on ```create_env.sh```.
+
+```
+gh repo clone PRCSousa/humanoid-challenge
+cd humanoid_challenge
+bash create_env.sh
+```
+
+This installs all the dependencies and libraries, creates a conda environment called ```lerobot```, and installs LeRobot with the SmolVLA and Libero.
+
+The end-to-end pipeline should look something like:
+
+```python
+conda activate lerobot
+
+# Extract hand poses from recorded videos
+python scripts/extract_hand_poses.py \
+    --raw_dir data/raw_videos \
+    --out_dir data/poses \
+
+# Retarget hand poses to LIBERO actions, replay and save episodes
+python scripts/replay_offline.py \
+    --poses data/poses \
+    --raw data/raw_videos \
+    --episodes_out data/episodes \
+    --videos_out outputs/videos \
+    --camera_pitch_deg 70.0 \
+    --scale 1.5
+
+# Build a LeRobot dataset from the episodes
+python scripts/build_lerobot_dataset.py \
+    --episodes data/episodes \
+    --root data/lerobot_dataset \
+    --repo_id ReAscalon/humanoid_move_thing # replace my user with your hugging face user
+
+# Fine-tune SmolVLA with LoRA
+lerobot-train \
+    --policy.path=HuggingFaceVLA/smolvla_libero \
+    --policy.push_to_hub=false \
+    --peft.method_type=LORA --peft.r=64 \
+    --dataset.repo_id=ReAscalon/humanoid_move_thing \
+    --dataset.root=./data/lerobot_dataset \
+    --batch_size=1 \
+    --accelerator.gradient_accumulation.steps=8 \
+    --accelerator.mixed_precision=bf16 \
+    --steps=40000 --save_freq=4000 --log_freq=50 \
+    --policy.device=cuda \
+    --output_dir=outputs/checkpoints/trained_model
+
+# Evaluate model
+python scripts/eval_primitives.py \
+    --policy_path outputs/checkpoints/trained_model/checkpoints/040000/pretrained_model/ \
+    --n_steps 100 \
+    --n_repeats 3 \
+    --device cuda
+```
 
 ## References
  - [Solving egl-probe](https://github.com/huggingface/lerobot/issues/105)
  - [And hf-egl-probe](https://github.com/huggingface/lerobot/issues/3397)
  - [MediaPipe Documentation](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker)
-
----
-
-This project was develped towards the Robot Learning Research Intership @ [Humanoid](https://thehumanoid.ai/).
+ - [Perspective-n-Point](https://docs.opencv.org/4.13.0/d5/d1f/calib3d_solvePnP.html)
+ - [VLA Compositional Understanding](https://arxiv.org/abs/2607.00351)
