@@ -113,14 +113,21 @@ With this, we have hand movement being decently translated into the simulation e
 
 ## Training
 
-In terms of training, given our constraints in terms of data, and the fact that I have less than a week to train, and that my PC has only 6GB of VRAM, I couldn't neither train a whole new VLA model, nor run a full fine-tune on SmolVLA. With this in mind, I set my goal on at least optimizing SmolVLA through LoRA. This would take a small toll of roughly 2GB of VRAM on my computer and run relatively fast approximatedly 6 hours per 30000 steps. Given my time and compute constraints, I'll expect a trade-off in terms of results to at least get some results.
+In terms of training, given our constraints in terms of data, and the fact that I have less than a week to train, and that my PC has only 6GB of VRAM, I couldn't neither train a whole new VLA model, nor run a full fine-tune on SmolVLA. With this in mind, I set my goal on at least optimizing SmolVLA through LoRA. This would take a small toll of roughly 2GB of VRAM on my computer and run relatively fast, approximatedly 6 hours per 30000 steps. Given my time and compute constraints, I'll expect a trade-off in performance to at least get some results.
 
 ## Results
 
-(Ran 3 per instruction ove 100 steps averaged each column explain later)
+In order to confirm if the fine-tuned model learnt the instructions that were provided in the dataset, I produced a small evaluation script that kept track of:
+
+ - Δx, Δy, Δz: The relative distance travelled in each respective axis relative to the starting point.
+ - abs. path: The total distance travelled by the arm.
+ - rY: The range of which the arm moved in the Y axis, in order to see if movements were mainly unidirectional or if it covered the full range of the arm.
+ - rG: The range of which the gripper opened. This will have a small bias due to the thresholding method I implemented.
+ - sY, sZ, sG: The total of times the sign changed in the respective measure. The main intent of these values is to see if the arm attempted to do the circular motions in the clockwise and counterclockwise instructions.
+
 
 ### BASELINE
-| instruction      | Δx   | Δy   | Δz   | abs. path | rY     | gR     | sY | sZ | sG |
+| instruction      | Δx   | Δy   | Δz   | abs. path | rY     | rG     | sY | sZ | sG |
 | ---------------- | ------- | ------- | ------- | ------ | ------ | ------ | -- | -- | -- |
 | move left        | +0.1304 | +0.0537 | -0.0177 | 0.3556 | 0.0703 | 0.0642 | 7  | 10 | 7  |
 | move right       | +0.2407 | -0.0998 | +0.0904 | 0.4022 | 0.1228 | 0.0387 | 4  | 7  | 6  |
@@ -133,17 +140,18 @@ In terms of training, given our constraints in terms of data, and the fact that 
 | hold still       | +0.2086 | +0.0191 | -0.0302 | 0.4085 | 0.0972 | 0.0697 | 5  | 10 | 9  |
 
 ### FINE-TUNED
-| instruction      | Δx   | Δy   | Δz   | abs. path | rY     | gR     | sY | sZ | sG |
+| instruction      | Δx   | Δy   | Δz   | abs. path | rY     | rG     | sY | sZ | sG |
 | ---------------- | ------- | ------- | ------- | ------ | ------ | ------ | -- | -- | -- |
-| move forward     | -0.1765 | -0.0554 | +0.0244 | 0.4441 | 0.0830 | 0.0756 | 7  | 2  | 9  |
-| move backward    | +0.1109 | -0.1642 | -0.0133 | 0.3777 | 0.1744 | 0.0787 | 3  | 1  | 4  |
-| clockwise        | -0.2693 | -0.3020 | +0.0179 | 0.5874 | 0.3082 | 0.0785 | 11 | 1  | 8  |
-| counterclockwise | -0.3129 | -0.3182 | +0.0220 | 0.5728 | 0.3187 | 0.0780 | 4  | 0  | 10 |
-| wave             | +0.0148 | +0.4424 | +0.0079 | 0.6267 | 0.4430 | 0.0788 | 1  | 2  | 6  |
-| clap             | -0.0430 | +0.0427 | +0.0085 | 0.1472 | 0.0441 | 0.0634 | 0  | 0  | 11 |
+| move left        | -0.0697 | **+0.5332** | +0.0009 | 0.5727 | 0.5335 | 0.0781 | 0  | 0  | 11 |
+| move right       | -0.1880 | **-0.4421** | +0.0129 | 0.5412 | 0.4426 | 0.0785 | 0  | 0  | 7  |
+| move forward     | **-0.1765** | -0.0554 | +0.0244 | 0.4441 | 0.0830 | 0.0756 | 7  | 2  | 9  |
+| move backward    | **+0.1109** | -0.1642 | -0.0133 | 0.3777 | 0.1744 | 0.0787 | 3  | 1  | 4  |
+| clockwise        | -0.2693 | -0.3020 | +0.0179 | 0.5874 | 0.3082 | 0.0785 | **11** | 1  | 8  |
+| counterclockwise | -0.3129 | -0.3182 | +0.0220 | 0.5728 | 0.3187 | 0.0780 | **4**  | 0  | 10 |
+| wave             | +0.0148 | **+0.4424** | +0.0079 | 0.6267 | 0.4430 | 0.0788 | **1**  | 2  | 6  |
+| clap             | -0.0430 | +0.0427 | +0.0085 | 0.1472 | 0.0441 | 0.0634 | 0  | 0  | **11** |
 | hold still       | -0.1593 | -0.0452 | +0.0232 | 0.2380 | 0.0517 | 0.0784 | 2  | 0  | 11 |
-| move left        | -0.0697 | +0.5332 | +0.0009 | 0.5727 | 0.5335 | 0.0781 | 0  | 0  | 11 |
-| move right       | -0.1880 | -0.4421 | +0.0129 | 0.5412 | 0.4426 | 0.0785 | 0  | 0  | 7  |
+
 
 ## Reproducibility
 
