@@ -71,7 +71,7 @@ By making some assumptions in my hand size, I could use the distance between lan
 <img src="imgs/perspective.png" style='width: 70%'/>
 </p>
 
-## The stroke of genius
+## The stroke of inspiration
 
 So I had to search for something a bit more intricate, and that's when I read about Perspective-n-Point (PnP).
 
