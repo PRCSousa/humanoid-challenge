@@ -140,19 +140,71 @@ In order to confirm if the fine-tuned model learnt the instructions that were pr
 | hold still       | +0.2251     | -0.0367     | +0.0590     | **0.3921**  | 0.0816   | 0.0558   | 1  | 3  | 9  | 8  |
 
 ### FINE-TUNED
-| instruction      | Δx   | Δy   | Δz   | abs. path | rY     | rG     | sY | sZ | sG |
-| ---------------- | ------- | ------- | ------- | ------ | ------ | ------ | -- | -- | -- |
-| move left        | -0.0697 | **+0.5332** | +0.0009 | 0.5727 | 0.5335 | 0.0781 | 0  | 0  | 11 |
-| move right       | -0.1880 | **-0.4421** | +0.0129 | 0.5412 | 0.4426 | 0.0785 | 0  | 0  | 7  |
-| move forward     | **-0.1765** | -0.0554 | +0.0244 | 0.4441 | 0.0830 | 0.0756 | 7  | 2  | 9  |
-| move backward    | **+0.1109** | -0.1642 | -0.0133 | 0.3777 | 0.1744 | 0.0787 | 3  | 1  | 4  |
-| clockwise        | -0.2693 | -0.3020 | +0.0179 | 0.5874 | 0.3082 | 0.0785 | **11** | 1  | 8  |
-| counterclockwise | -0.3129 | -0.3182 | +0.0220 | 0.5728 | 0.3187 | 0.0780 | **4**  | 0  | 10 |
-| wave             | +0.0148 | **+0.4424** | +0.0079 | 0.6267 | 0.4430 | 0.0788 | **1**  | 2  | 6  |
-| clap             | -0.0430 | +0.0427 | +0.0085 | 0.1472 | 0.0441 | 0.0634 | 0  | 0  | **11** |
-| hold still       | -0.1593 | -0.0452 | +0.0232 | 0.2380 | 0.0517 | 0.0784 | 2  | 0  | 11 |
+| instruction      | Δx          | Δy          | Δz          | abs. path   | rY       | rG       | sX | sY | sZ | sG |
+| ---------------- | ----------- | ----------- | ----------- | ----------- | -------- | -------- | -- | -- | -- | -- |
+| move left        | -0.0371     | **+0.5075** | +0.0016     | 0.5441      | 0.5075   | 0.0722   | 6  | 0  | 0  | 11 |
+| move right       | -0.1545     | **-0.4603** | +0.0186     | 0.5405      | 0.4603   | 0.0457   | 4  | 0  | 0  | 12 |
+| move forward     | **-0.3315** | -0.1128     | +0.0330     | 0.4444      | 0.1176   | 0.0414   | 2  | 3  | 1  | 11 |
+| move backward    | **+0.0159** | -0.1732     | +0.0150     | 0.3679      | 0.1771   | 0.0368   | 10 | 3  | 0  | 8  |
+| clockwise        | -0.2331     | -0.1476     | +0.0231     | 0.5686      | 0.2395   | 0.0476   | **8** | **8** | 2  | 10 |
+| counterclockwise | -0.2928     | -0.2837     | +0.0257     | 0.5624      | 0.2859   | 0.0453   | **6** | **6** | 2  | 12 |
+| wave             | +0.0638     | +0.4258     | +0.0328     | 0.5934      | 0.4303   | 0.0371   | 17 | **0** | 2  | 6  |
+| clap             | -0.0462     | +0.0302     | +0.0094     | 0.1375      | 0.0337   | 0.0500   | 1  | 0  | 0  | **7** |
+| hold still       | -0.0890     | -0.0855     | +0.0249     | **0.2663**  | 0.0955   | 0.0608   | 6  | 4  | 0  | 15 |
+
+Here we can visualize ```move left```:
+<p align="center">
+<img src="imgs/move_left.gif"style='width: 100%'/>
+</p>
+
+And ```move right```:
+
+<p align="center">
+<img src="imgs/move_right.gif"style='width: 100%'/>
+</p>
+
+And ```counterclockwise```:
+
+<p align="center">
+<img src="imgs/clockwise.gif"style='width: 100%'/>
+</p>
+
+## Discussion
+
+Overall, I believe this project to be a success. We managed to map hand videos into a VLA model to teach it primitive commands, without using any kind of reference anchor. This model successfully learned some of these primitive commands when compared to the baseline counterpart.
+
+### Temporar Consistency
+
+The directional primitives were the easiest to train and the ones that worked most cleanly, while the most complex ones like moving in a clockwise motion failed. I believe that, when compared to the unidirectional ones where the frame by frame data indicates the same motion, having moments where we are going left and then moments where we are going right causes confusion in the model. This should be due to the model's lack of memory, as if it does not know "where in the loop" it currently is, it cannot produce the corresponding next motion. As our data does not have any kind of temporal feature as we feed it in random batches, and the LoRA does not have any recurrent component, it was expected for these kinds of instructions to fail from the get-go.
+
+### Composite Instructions
+
+I also tested with composite instructions (e.g. seeing if the model could interpret "move left and move up"), but sadly it could not interpret these actions, which from what I've seen seems to be consistent with the overall [literature](https://arxiv.org/abs/2607.00351) on the topic, and personally, an interesting path to research.
+
+### Evaluation Metrics
+
+The evaluation I built, in terms of the metric I collected, is pretty simple, but it is a deliberate choice, as for directionality makes up most of the instructions I tried to teach the model. I thought path length and sign changes are enough to measure simple oscillatory behaviour like circling and waving, but in reality, these features do not properly demonstrate this behaviour. If I were to train on harder tasks, I'd also have to read and idealize a much stronger set of experiments and evaluation metrics, and better ways to measure circular motion.
 
 
+### Limitations
+
+I found out about this challenge with one week remaining, and this was the constraint that shaped all the decisions I took. I had thought about training the arm on picking and placing objects, and trying to do so without any kind of anchor would mean spending the better part of my time idealizing a way to do so in terms of data. I believed (and still do believe) that the most interesting and important problem is the one upstream of training a policy: "how do I turn simple videos recorded through my phone into learnable actions", and this led me to devote most of my time to the data.
+
+In terms of things that I would've done differently, the most obvious that comes to my mind was not producing any kind of testing units to run before the training itself. Training time was my biggest bottleneck, and coming to my computer after a 6-8 hour training session just to see that some data was mislabeled or that I had mixed some of the axes making the "left" instruction mean "up" was not ideal, mainly because it meant that it took me 6 hours to make a 5 minute fix. In total it took me 6 runs to train a decent model, with 3 of them being due to small mistakes on previous steps.
+
+Another thing I'd like to have done was to explore, yet again, other ways to use my videos with respect to the fine-tuning of the VLA model. I think that I did not use the VLA model to its fullest potential. Maybe if I had explored ways I could've used the language encoder to reach some kind of compositional understanding, or use the vision encoder in some way to estimate the world state (and explore the world model approach that was also recommended). There are a lot of things to try in such a complex model, and given the limitations, I couldn't chase them all. 
+
+## Conclusion
+
+With one week, one phone, 6GB of VRAM and a problem I've never tackled before, I answered "can I drive a robotic manipulator using a VLA by using my own hands?" and the answer is pretty positive.
+
+It's not a perfect solution, but what's most important was what I took away from it, this being that the most important part of any kind of machine learning problem lies on the data, and computer vision and embodied AI are no exception. Despite this, I also wanted to explore more the VLA architecture itself and develop some solution that made use of its individual components, and not just train it.
+
+In my opinion, solving the ambiguity of 2D-to-3D without relying on physical anchors was the biggest technical hurdle, and implementing the PnP geometry solver with the use of my hand palm became the technical centerpiece of the project, which I am really proud of.
+
+Despite these compromises, successfully building a whole pipeline from raw phone videos to a functional VLA policy was a massive success.
+
+Thanks to [Humanoid](https://thehumanoid.ai) for the challenge. It was a good week.
 
 ## Reproducibility
 
