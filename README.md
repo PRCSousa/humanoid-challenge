@@ -125,45 +125,33 @@ In order to confirm if the fine-tuned model learnt the instructions that were pr
  - rG: The range of which the gripper opened. This will have a small bias due to the thresholding method I implemented.
  - sY, sZ, sG: The total of times the sign changed in the respective measure. The main intent of these values is to see if the arm attempted to do the circular motions in the clockwise and counterclockwise instructions.
 
+Each value was calculated by running each instruction 3 times over 100 timesteps and averaging the results. Here is a summary table, with the full evaluation available in the appendix at the end of the document:
 
-### BASELINE
-| instruction      | Δx          | Δy          | Δz          | abs. path   | rY       | rG       | sX | sY | sZ | sG |
-| ---------------- | ----------- | ----------- | ----------- | ----------- | -------- | -------- | -- | -- | -- | -- |
-| move left        | +0.1127     | **+0.0792** | +0.0062     | 0.3633      | 0.0964   | 0.0765   | 3  | 4  | 5  | 5  |
-| move right       | +0.2461     | **-0.0872** | +0.0884     | 0.4016      | 0.1088   | 0.0405   | 0  | 6  | 11 | 6  |
-| move forward     | **+0.2108** | -0.0003     | +0.1285     | 0.3907      | 0.0620   | 0.0419   | 0  | 4  | 5  | 6  |
-| move backward    | **+0.0905** | +0.1142     | +0.0522     | 0.3276      | 0.1240   | 0.0548   | 1  | 1  | 10 | 10 |
-| clockwise        | +0.0948     | +0.0919     | -0.0259     | 0.3770      | 0.0978   | 0.0763   | **1** | **2** | 4  | 6  |
-| counterclockwise | +0.0828     | +0.1036     | -0.1094     | 0.3507      | 0.1111   | 0.0756   | **1** | **1** | 7  | 9  |
-| wave             | +0.2586     | -0.1099     | +0.1270     | 0.4459      | 0.1218   | 0.0374   | 0  | **4** | 6  | 3  |
-| clap             | -0.0172     | -0.1690     | -0.0211     | 0.3199      | 0.1713   | 0.0389   | 4  | 3  | 6  | **3** |
-| hold still       | +0.2251     | -0.0367     | +0.0590     | **0.3921**  | 0.0816   | 0.0558   | 1  | 3  | 9  | 8  |
+| Instruction          | Core Relevant Metric   | Baseline            | Fine-Tuned                    | Observations                                                     |
+| :------------------- | :--------------------- | :------------------ | :---------------------------- | :------ |
+| **move left**        | Δy                     | Δy: +0.0792         | Δy: +0.5075                   | The fine-tuned model successfully moves towards the left side with little impact in the remaining axes.     |
+| **move right**       | Δy                     | Δy: -0.0872         | Δy: -0.4603                   | Similar outcome on the right direction.     |
+| **move forward**     | Δx                     | Δx: -0.0003         | Δx: -0.3315                   | Moving forward did work.  |
+| **move backward**    | Δx                     | Δx: +0.1142         | Δx: -0.1732                   | But the arm had difficulties going backwards.   |
+| **clockwise**        | sX, sY                 | sX: 1, sY: 2        | sX: 8, sY: 8                  | Despite the metrics suggesting it did learn how to do circular motion, the visual demonstation below this table indicates otherwise.   |
+| **counterclockwise** | sX, sY                 | sX: 1, sY: 1        | sX: 6, sY: 6                  | Both this and the previous instruction produce similar results.  |
+| **wave**             | sY, Δy                 | sY: 4, Δy: -0.1099  | sY: 0, Δy: +0.4258            | Fine-tuned model executed a large unidirectional sweep instead of waving back and forth, corroborating with the lack of capacity to learn oscillatory behaviour.     |
+| **clap**             | rG, sG                 | rG: 0.0389, sG: 3   | rG: 0.0500, sG: 7             | Despite the gripper mapping I produced, the arm is able to clap relatively well.            |
+| **hold still**       | Absolute Path          | 0.3921              | 0.2663                        | The fine-tuned model successfully reduced total movement distance compared to the baseline.      |
 
-### FINE-TUNED
-| instruction      | Δx          | Δy          | Δz          | abs. path   | rY       | rG       | sX | sY | sZ | sG |
-| ---------------- | ----------- | ----------- | ----------- | ----------- | -------- | -------- | -- | -- | -- | -- |
-| move left        | -0.0371     | **+0.5075** | +0.0016     | 0.5441      | 0.5075   | 0.0722   | 6  | 0  | 0  | 11 |
-| move right       | -0.1545     | **-0.4603** | +0.0186     | 0.5405      | 0.4603   | 0.0457   | 4  | 0  | 0  | 12 |
-| move forward     | **-0.3315** | -0.1128     | +0.0330     | 0.4444      | 0.1176   | 0.0414   | 2  | 3  | 1  | 11 |
-| move backward    | **+0.0159** | -0.1732     | +0.0150     | 0.3679      | 0.1771   | 0.0368   | 10 | 3  | 0  | 8  |
-| clockwise        | -0.2331     | -0.1476     | +0.0231     | 0.5686      | 0.2395   | 0.0476   | **8** | **8** | 2  | 10 |
-| counterclockwise | -0.2928     | -0.2837     | +0.0257     | 0.5624      | 0.2859   | 0.0453   | **6** | **6** | 2  | 12 |
-| wave             | +0.0638     | +0.4258     | +0.0328     | 0.5934      | 0.4303   | 0.0371   | 17 | **0** | 2  | 6  |
-| clap             | -0.0462     | +0.0302     | +0.0094     | 0.1375      | 0.0337   | 0.0500   | 1  | 0  | 0  | **7** |
-| hold still       | -0.0890     | -0.0855     | +0.0249     | **0.2663**  | 0.0955   | 0.0608   | 6  | 4  | 0  | 15 |
 
-Here we can visualize ```move left```:
+Here we can visualize ```move left``` acting as expected:
 <p align="center">
 <img src="imgs/move_left.gif"style='width: 100%'/>
 </p>
 
-And ```move right```:
+And ```move right``` having a little bias towards moving forward:
 
 <p align="center">
 <img src="imgs/move_right.gif"style='width: 100%'/>
 </p>
 
-And ```counterclockwise```:
+And as mentioned in the previous table, ```counterclockwise``` fails to produce the expected behaviour of circling arround the table:
 
 <p align="center">
 <img src="imgs/clockwise.gif"style='width: 100%'/>
@@ -173,7 +161,7 @@ And ```counterclockwise```:
 
 Overall, I believe this project to be a success. We managed to map hand videos into a VLA model to teach it primitive commands, without using any kind of reference anchor. This model successfully learned some of these primitive commands when compared to the baseline counterpart.
 
-### Temporar Consistency
+### Temporal Consistency & Oscillatory Behaviour
 
 The directional primitives were the easiest to train and the ones that worked most cleanly, while the most complex ones like moving in a clockwise motion failed. I believe that, when compared to the unidirectional ones where the frame by frame data indicates the same motion, having moments where we are going left and then moments where we are going right causes confusion in the model. This should be due to the model's lack of memory, as if it does not know "where in the loop" it currently is, it cannot produce the corresponding next motion. As our data does not have any kind of temporal feature as we feed it in random batches, and the LoRA does not have any recurrent component, it was expected for these kinds of instructions to fail from the get-go.
 
@@ -271,3 +259,31 @@ python scripts/eval_primitives.py \
  - [MediaPipe Documentation](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker)
  - [Perspective-n-Point](https://docs.opencv.org/4.13.0/d5/d1f/calib3d_solvePnP.html)
  - [VLA Compositional Understanding](https://arxiv.org/abs/2607.00351)
+
+## Appendix
+
+### BASELINE RESULTS
+| instruction      | Δx          | Δy          | Δz          | abs. path   | rY       | rG       | sX | sY | sZ | sG |
+| ---------------- | ----------- | ----------- | ----------- | ----------- | -------- | -------- | -- | -- | -- | -- |
+| move left        | +0.1127     | **+0.0792** | +0.0062     | 0.3633      | 0.0964   | 0.0765   | 3  | 4  | 5  | 5  |
+| move right       | +0.2461     | **-0.0872** | +0.0884     | 0.4016      | 0.1088   | 0.0405   | 0  | 6  | 11 | 6  |
+| move forward     | **+0.2108** | -0.0003     | +0.1285     | 0.3907      | 0.0620   | 0.0419   | 0  | 4  | 5  | 6  |
+| move backward    | **+0.0905** | +0.1142     | +0.0522     | 0.3276      | 0.1240   | 0.0548   | 1  | 1  | 10 | 10 |
+| clockwise        | +0.0948     | +0.0919     | -0.0259     | 0.3770      | 0.0978   | 0.0763   | **1** | **2** | 4  | 6  |
+| counterclockwise | +0.0828     | +0.1036     | -0.1094     | 0.3507      | 0.1111   | 0.0756   | **1** | **1** | 7  | 9  |
+| wave             | +0.2586     | -0.1099     | +0.1270     | 0.4459      | 0.1218   | 0.0374   | 0  | **4** | 6  | 3  |
+| clap             | -0.0172     | -0.1690     | -0.0211     | 0.3199      | 0.1713   | 0.0389   | 4  | 3  | 6  | **3** |
+| hold still       | +0.2251     | -0.0367     | +0.0590     | **0.3921**  | 0.0816   | 0.0558   | 1  | 3  | 9  | 8  |
+
+### FINE-TUNED RESULTS
+| instruction      | Δx          | Δy          | Δz          | abs. path   | rY       | rG       | sX | sY | sZ | sG |
+| ---------------- | ----------- | ----------- | ----------- | ----------- | -------- | -------- | -- | -- | -- | -- |
+| move left        | -0.0371     | **+0.5075** | +0.0016     | 0.5441      | 0.5075   | 0.0722   | 6  | 0  | 0  | 11 |
+| move right       | -0.1545     | **-0.4603** | +0.0186     | 0.5405      | 0.4603   | 0.0457   | 4  | 0  | 0  | 12 |
+| move forward     | **-0.3315** | -0.1128     | +0.0330     | 0.4444      | 0.1176   | 0.0414   | 2  | 3  | 1  | 11 |
+| move backward    | **+0.0159** | -0.1732     | +0.0150     | 0.3679      | 0.1771   | 0.0368   | 10 | 3  | 0  | 8  |
+| clockwise        | -0.2331     | -0.1476     | +0.0231     | 0.5686      | 0.2395   | 0.0476   | **8** | **8** | 2  | 10 |
+| counterclockwise | -0.2928     | -0.2837     | +0.0257     | 0.5624      | 0.2859   | 0.0453   | **6** | **6** | 2  | 12 |
+| wave             | +0.0638     | +0.4258     | +0.0328     | 0.5934      | 0.4303   | 0.0371   | 17 | **0** | 2  | 6  |
+| clap             | -0.0462     | +0.0302     | +0.0094     | 0.1375      | 0.0337   | 0.0500   | 1  | 0  | 0  | **7** |
+| hold still       | -0.0890     | -0.0855     | +0.0249     | **0.2663**  | 0.0955   | 0.0608   | 6  | 4  | 0  | 15 |
