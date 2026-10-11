@@ -92,8 +92,18 @@ So, instead of calculating the relative position of the camera to our palm, we i
 
 This did work! And honestly in a much better way than I was expecting. As seen in the gif the axes are a bit crooked, in the end I assume the palm to be a plane, and this would be a limitation as any task requiring twisting my hand would throw this off, but for a hand serving as a proxy of a robotic arm, this will suffice.
 
+## One week extension: Camera-Agnostic
 
-### Preparing our data
+Just was I was wrapping up the project, the deadline got extended from the 9th to the 16th. This gave me the perfect opportunity to solve some of the previously mentioned problems, and to extend on an interesting idea I had which also covers one of the limitations.
+
+To be more specific, my PnP implementation right now uses a camera angle assumption in order to rotate my hand's position to keep it aligned with the simulation's table. If anything, this is really brittle and will break if the camera position/angle changes. To complement this, I also wanted to play with the data collection, meaning that I wanted to somehow make this something more social, of going arround asking people to let me record their hands acting a given instruction.
+
+When using ```cv2.solvePnP```, I initially only used the translation vector to estimate the hands position and treated the camera as the frame of reference, which forced me to to correct the pitch. But ```cv2.solvePnP``` also provides the rotation vector, which should represent the the palm's rotation in relation to the camera.
+
+If I assume the initial frames of the video and the corresponding hand positions as a baseline position, I could then establish that as the origin of the hand's coordinate system, and use that to calculate the position of the hand in the remainder of the video.
+
+
+## Preparing our data
 
 Now that we can convert 2D video to hand positions, we will make use of the change in position of my hand to produce data, so my hand movement will be expressed as [dx, dy, dz, drx, dry, drz, gripper].
 
