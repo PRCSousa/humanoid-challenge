@@ -180,6 +180,8 @@ def extract_one(video_path: Path, out_path: Path, debug_path: Path | None, model
         "n_detected": n_detected,
         "detection_rate": n_detected / max(len(frames), 1),
         "frames": frames,
+        "max_thumb_index_dist": max((f["thumb_index_dist"] for f in frames if f["thumb_index_dist"] is not None), default=None),
+        "min_thumb_index_dist": min((f["thumb_index_dist"] for f in frames if f["thumb_index_dist"] is not None), default=None),
     }
     
     out_path.parent.mkdir(parents=True, exist_ok=True)

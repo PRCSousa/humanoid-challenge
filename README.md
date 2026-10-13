@@ -102,6 +102,9 @@ When using ```cv2.solvePnP```, I initially only used the translation vector to e
 
 If I assume the initial frames of the video and the corresponding hand positions as a baseline position, I could then establish that as the origin of the hand's coordinate system, and use that to calculate the position of the hand in the remainder of the video.
 
+<p align="center">
+<img src="imgs/agnostic_hand.gif"style='width: 586px'/>
+</p>
 
 ## Preparing our data
 
