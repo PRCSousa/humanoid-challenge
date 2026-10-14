@@ -106,6 +106,10 @@ If I assume the initial frames of the video and the corresponding hand positions
 <img src="imgs/agnostic_hand.gif"style='width: 586px'/>
 </p>
 
+This was a huge upgrade in terms of data collection, and this also sovled the camera position constraints. As seen, no matter the orientation of the hand in relation to the camera, we are able to extract its position quite well.
+
+Personally, I think this is the centerpiece of the whole challenge, being able to extract hand position without anchoring it to the environment.
+
 ## Preparing our data
 
 Now that we can convert 2D video to hand positions, we will make use of the change in position of my hand to produce data, so my hand movement will be expressed as [dx, dy, dz, drx, dry, drz, gripper].
