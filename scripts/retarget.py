@@ -16,6 +16,25 @@ PALM_3D_MODEL = np.array([
 
 PALM_LANDMARK_INDICES = [0, 5, 9, 13, 17]
 
+
+def kmeans_1d(x, n_iter=50):
+    lo, hi = np.percentile(x, 10), np.percentile(x, 90)
+    for _ in range(n_iter):
+        mid = (lo + hi) / 2.0
+        c1 = x[x < mid]
+        c2 = x[x >= mid]
+        if len(c1) == 0 or len(c2) == 0:
+            break
+            
+        new_lo, new_hi = c1.mean(), c2.mean()
+        if abs(new_lo - lo) < 1e-6 and abs(new_hi - hi) < 1e-6:
+            break
+            
+        lo, hi = new_lo, new_hi
+        
+    return lo, hi
+
+
 def clip_vector(v, max_norm):
     n = np.linalg.norm(v)
     if n > max_norm and n > 0:
@@ -46,6 +65,29 @@ class PnPRetargeter:
             [0.0, np.cos(theta), -np.sin(theta)],
             [0.0, np.sin(theta),  np.cos(theta)],
         ])
+
+    def calibrate(self, frames):
+        aps = np.array([f["aperture"] for f in frames if f.get("aperture") is not None])
+        if len(aps) < 20:
+            return None
+
+        low, high = kmeans_1d(aps)
+        if high <= low:
+            return None
+
+        self.cfg.close_thresh = low + 0.30 * (high - low)
+        self.cfg.open_thresh = low + 0.70 * (high - low)
+
+        return {
+            "close_thresh": float(self.cfg.close_thresh),
+            "open_thresh": float(self.cfg.open_thresh),
+            "kmeans_low": float(low),
+            "kmeans_high": float(high),
+            "n_samples": len(aps),
+            "aperture_min": float(aps.min()),
+            "aperture_max": float(aps.max()),
+            "aperture_mean": float(aps.mean()),
+        }
 
     def reset(self):
         self.prev_tvec_ema = None
@@ -121,6 +163,7 @@ def process_clip(pose_path, out_path, cfg):
 
     frames = data["frames"]
     retargeter = PnPRetargeter(cfg)
+    calib = retargeter.calibrate(frames) # use kmeans to calculate thresholds
 
     actions = []
     for f in frames:
@@ -140,6 +183,7 @@ def process_clip(pose_path, out_path, cfg):
         "height": cfg.height,
         "n_frames": len(actions),
         "n_interpolated": sum(a["interpolated"] for a in actions),
+        "aperture_calibration": calib,
         "config": vars(cfg),
         "frames": actions,
     }
